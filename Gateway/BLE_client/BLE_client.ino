@@ -24,13 +24,14 @@ struct Disp_BLE{
     BLEClient*  pClient  = BLEDevice::createClient();
     BLEAdvertisedDevice advertisedDevice;
     boolean leu = false;
-    uint8_t accx;
-    uint8_t accy;
-    uint8_t accz;
-    uint8_t girx;
-    uint8_t giry;
-    uint8_t girz;
-    uint8_t temp;
+    signed int accx;
+    signed int accy;
+    signed int accz;
+    signed int girx;
+    signed int giry;
+    signed int girz;
+    signed int temp;
+    signed char auxByte;
 } aux;
 
 static uint8_t xablau = 0;
@@ -115,14 +116,28 @@ void send_data(int accx, int accy, int accz, int girx, int giry, int girz, int t
 static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
     Serial.print("Notificação recebida de: ");
     Serial.println(pBLERemoteCharacteristic->getUUID().toString().c_str());
-    
-    aux.accx = pData[0];
-    aux.accy = pData[1];
-    aux.accz = pData[2];
-    aux.girx = pData[3];
-    aux.giry = pData[4];
-    aux.girz = pData[5];
-    aux.temp = pData[6];
+
+    aux.auxByte = pData[1];
+    aux.accx = (aux.auxByte << 8) | (pData[0]);
+
+    aux.auxByte = pData[3];
+    aux.accy = (aux.auxByte << 8) | (pData[2]);
+
+    aux.auxByte = pData[5];
+    aux.accz = (aux.auxByte << 8) | (pData[4]);
+
+    aux.auxByte = pData[7];
+    aux.girx = (aux.auxByte << 8) | (pData[6]);
+
+    aux.auxByte = pData[9];
+    aux.giry = (aux.auxByte << 8) | (pData[8]);
+
+    aux.auxByte = pData[11];
+    aux.girz = (aux.auxByte << 8) | (pData[10]);
+
+    aux.auxByte = pData[13];
+    aux.temp = (aux.auxByte << 8) | (pData[12]);
+
     aux.leu = true;
     timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
     aux.pClient->disconnect();
