@@ -27,7 +27,7 @@ def closeConnection(cr, cnx):
     cr.close()
     cnx.close()
 
-class collect:
+class collectClass:
 	def __init__(self, _collect, _gateway, _endpoint):
 		self.collect = _collect
 		self.gateway = _gateway
@@ -44,6 +44,7 @@ def receiveCollect():
 		
 		placeID = request.json["place_id"]
 		
+		resultado = []
 		dictionary = {}
 
 		(cr, cnx) = openConnection()
@@ -52,26 +53,25 @@ def receiveCollect():
 		
 		cr.execute(query, dados)
 
-		for collect in cr.fetchall():
-			dictionary.update({'collect_id': collect[0]})
-			dictionary.update({'accx': collect[1]})
-			dictionary.update({'accy': collect[2]})
-			dictionary.update({'accz': collect[3]})
-			dictionary.update({'girx': collect[4]})
-			dictionary.update({'giry': collect[5]})
-			dictionary.update({'girz': collect[6]})
-			dictionary.update({'temp': collect[7]})
+		for collectRow in cr.fetchall():
+			dictionary.update({'collect_id': collectRow[0]})
+			dictionary.update({'accx': collectRow[1]})
+			dictionary.update({'accy': collectRow[2]})
+			dictionary.update({'accz': collectRow[3]})
+			dictionary.update({'temp': collectRow[7]})
+			resultado.append(dictionary)
+			dictionary = {}
 
 		closeConnection(cr, cnx)
 		
-		return jsonify({'collect': dictionary})
+		return jsonify({'collect': resultado})
 		
 	else:
 		print(request.json, file=sys.stderr)
 		if not request.json:
 			abort(400)
 			
-		col = collect(
+		col = collectClass(
 				request.json['collect'], 
 				request.json['gateway'], 
 				request.json['endpoint']
@@ -118,8 +118,8 @@ def receiveCollect():
 	########## Grava no banco a coleta recebida do gateway         ##########
 	
 		date = time.strftime('%Y-%m-%d %H:%M:%S')
-		queryCollect = ("INSERT INTO Collect (accx, accy, accz, girx, giry, girz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, %d, %d, %d, '%s', %d, %d)" % 
-			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['girx'], col.collect['giry'], col.collect['girz'], col.collect['temp'], date, idGateway, idPlace))
+		queryCollect = ("INSERT INTO Collect (accx, accy, accz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, '%s', %d, %d)" % 
+			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['temp'], date, idGateway, idPlace))
 		(cr,cnx) = openConnection()
 		try: 
 			cr.execute(queryCollect)
@@ -278,4 +278,4 @@ def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 if __name__ == "__main__":
-	app.run(host="0.0.0.0", port=5002, debug=True)
+	app.run(host="0.0.0.0", port=5000, debug=True)
