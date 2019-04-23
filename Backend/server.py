@@ -35,15 +35,12 @@ class collectClass:
 
 ###################################    COLETA        ###################################
 
-@app.route('/collect',methods=['POST', 'GET'])
+@app.route('/collect', methods=['POST', 'GET'])
 def receiveCollect():
 	if request.method == "GET":
 		
-		if not request.json:
-			abort(400)
-		
-		placeID = request.json["place_id"]
-		
+		placeID = request.args.get("place_id")
+				
 		resultado = []
 		dictionary = {}
 
@@ -58,13 +55,14 @@ def receiveCollect():
 			dictionary.update({'accx': collectRow[1]})
 			dictionary.update({'accy': collectRow[2]})
 			dictionary.update({'accz': collectRow[3]})
-			dictionary.update({'temp': collectRow[7]})
+			dictionary.update({'temp': collectRow[4]})
+			dictionary.update({'data': str(collectRow[5])})
 			resultado.append(dictionary)
 			dictionary = {}
 
 		closeConnection(cr, cnx)
 		
-		return jsonify({'collect': resultado})
+		return jsonify(resultado)
 		
 	else:
 		print(request.json, file=sys.stderr)
@@ -117,9 +115,8 @@ def receiveCollect():
 	
 	########## Grava no banco a coleta recebida do gateway         ##########
 	
-		date = time.strftime('%Y-%m-%d %H:%M:%S')
-		queryCollect = ("INSERT INTO Collect (accx, accy, accz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, '%s', %d, %d)" % 
-			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['temp'], date, idGateway, idPlace))
+		queryCollect = ("INSERT INTO Collect (accx, accy, accz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, TIMESTAMP(NOW()), %d, %d)" % 
+			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['temp'], idGateway, idPlace))
 		(cr,cnx) = openConnection()
 		try: 
 			cr.execute(queryCollect)
@@ -175,7 +172,7 @@ def equipments():
 
 		closeConnection(cr, cnx)
 		
-		return jsonify({'equipments': resultado})
+		return jsonify(resultado)
 
 ########## PLACES  ###############
 	
@@ -209,21 +206,22 @@ def places():
 		dictionary = {}
 
 		(cr, cnx) = openConnection()
-		query = "SELECT * FROM Place"
+		query = "SELECT P.idPlace, P.description, E.idEquipment, E.description FROM Place P INNER JOIN Equipment E ON E.idEquipment = P.Equipment_idEquipment"
 
 		cr.execute(query)
 
 		for place in cr.fetchall():
 			dictionary.update({'place_id': place[0]})
-			dictionary.update({'description': place[1]})
+			dictionary.update({'place_description': place[1]})
 			dictionary.update({'equipment_id': place[2]})
+			dictionary.update({'equipment_description': place[3]})
 			resultado.append(dictionary)
 			dictionary = {}
 
 		closeConnection(cr, cnx)
 		
-		return jsonify({'places': resultado})
-
+		return jsonify(resultado)
+	
 ########## ENDPOINT  ###############
 	
 @app.route('/endpoints', methods=['POST', 'GET'])
@@ -269,7 +267,7 @@ def endpoints():
 
 		closeConnection(cr, cnx)
 		
-		return jsonify({'endpoints': resultado})
+		return jsonify(resultado)
 	
 ###################################        QUANDO COM ERROS        ###################################
 		
