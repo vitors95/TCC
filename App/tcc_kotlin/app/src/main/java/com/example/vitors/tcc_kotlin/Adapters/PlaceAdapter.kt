@@ -1,18 +1,34 @@
 package com.example.vitors.tcc_kotlin.Adapters
 
+import android.graphics.Canvas
+import android.graphics.Color
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.example.vitors.tcc_kotlin.Models.Collect
 import com.example.vitors.tcc_kotlin.Models.Place
 import com.example.vitors.tcc_kotlin.R
+import com.example.vitors.tcc_kotlin.Utils.DateHelper
+import com.github.mikephil.charting.components.AxisBase
+import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.renderer.XAxisRenderer
+import com.github.mikephil.charting.utils.HorizontalViewPortHandler
+import com.github.mikephil.charting.utils.MPPointF
+import com.github.mikephil.charting.utils.Transformer
+import com.github.mikephil.charting.utils.ViewPortHandler
 import kotlinx.android.synthetic.main.place_item.view.*
+import kotlin.collections.ArrayList
 
 class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): RecyclerView.Adapter<PlaceHolderView>() {
+
+    val dateHelper = DateHelper()
 
     override fun getItemCount(): Int {
         return places.count()
@@ -28,19 +44,73 @@ class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): Recy
         val place = places[position]
         val collect = collects
         val entries: ArrayList<Entry> = arrayListOf()
+        val timestamps: ArrayList<Long> = arrayListOf()
 
-        collect.forEach { entries.add(Entry(1.toFloat(), it.temp.toFloat())) }
+        collect.forEachIndexed { index, collect ->
+            entries.add(Entry(index.toFloat(), ((collect.temp/340)+36.53).toFloat()))
+            timestamps.add(dateHelper.dateString2Timetamp(collect.data))
+        }
 
         val dataSet = LineDataSet(entries, "Temperatura")
+        dataSet.fillAlpha = 110
+        dataSet.color = Color.RED
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.setDrawValues(false)
+        dataSet.setDrawCircles(false)
         val lineData = LineData(dataSet)
 
         holder.view.line_chart.data = lineData
+        holder.view.line_chart.description.text = ""
+        holder.view.line_chart.legend.isEnabled = false
+        holder.view.line_chart.invalidate()
+        holder.view.line_chart.axisRight.isEnabled = false
+        holder.view.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        holder.view.line_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        holder.view.line_chart.axisLeft.setDrawGridLines(false)
+        holder.view.line_chart.axisRight.setDrawGridLines(false)
+        holder.view.line_chart.xAxis.setDrawGridLines(false)
+
+        val xAxis = holder.view.line_chart.xAxis
+
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.labelCount = 4
+        xAxis.granularity = 1f
+        xAxis.isGranularityEnabled = true
+
+        val xValsDateLabel = ArrayList<String>()
+
+        timestamps.forEach {
+            val min = it / 60 % 60
+            val hour = it / (60 * 60) % 24
+            val dateTime = if (min > 9) "$hour:$min" + "\nteste" else "$hour:0$min teste"
+            xValsDateLabel.add(dateTime)
+        }
+
+        xAxis.valueFormatter = (DateFormatter(xValsDateLabel))
+
         holder.view.text_equipment_description.text = place.equipment_description
         holder.view.text_place_description.text = place.place_description
 
     }
+
 }
 
 class PlaceHolderView(val view: View): RecyclerView.ViewHolder(view) {
+
+}
+
+class DateFormatter(private val xValsDateLabel: ArrayList<String>): ValueFormatter() {
+
+    override fun getFormattedValue(value: Float): String {
+        return value.toString()
+    }
+
+    override fun getAxisLabel(value: Float, axis: AxisBase?): String {
+        if(value.toInt() >= 0 && value.toInt() <= xValsDateLabel.size - 1) {
+            return xValsDateLabel[value.toInt()]
+        } else {
+            return ("").toString()
+        }
+    }
 
 }
