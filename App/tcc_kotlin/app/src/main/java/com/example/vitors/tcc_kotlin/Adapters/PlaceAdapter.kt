@@ -19,11 +19,11 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.renderer.XAxisRenderer
-import com.github.mikephil.charting.utils.HorizontalViewPortHandler
-import com.github.mikephil.charting.utils.MPPointF
-import com.github.mikephil.charting.utils.Transformer
-import com.github.mikephil.charting.utils.ViewPortHandler
+import com.github.mikephil.charting.utils.*
 import kotlinx.android.synthetic.main.place_item.view.*
+import okhttp3.internal.Util
+import java.time.format.TextStyle
+import java.util.*
 import kotlin.collections.ArrayList
 
 class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): RecyclerView.Adapter<PlaceHolderView>() {
@@ -51,8 +51,8 @@ class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): Recy
             timestamps.add(dateHelper.dateString2Timetamp(collect.data))
         }
 
-        val dataSet = LineDataSet(entries, "Temperatura")
-        dataSet.fillAlpha = 110
+        val dataSet = LineDataSet(entries, "Temperatura (°C)")
+        dataSet.fillAlpha = 1100
         dataSet.color = Color.RED
         dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
         dataSet.setDrawValues(false)
@@ -61,7 +61,7 @@ class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): Recy
 
         holder.view.line_chart.data = lineData
         holder.view.line_chart.description.text = ""
-        holder.view.line_chart.legend.isEnabled = false
+        holder.view.line_chart.legend.isEnabled = true
         holder.view.line_chart.invalidate()
         holder.view.line_chart.axisRight.isEnabled = false
         holder.view.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
@@ -69,6 +69,7 @@ class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): Recy
         holder.view.line_chart.axisLeft.setDrawGridLines(false)
         holder.view.line_chart.axisRight.setDrawGridLines(false)
         holder.view.line_chart.xAxis.setDrawGridLines(false)
+        holder.view.line_chart.extraBottomOffset = 25f
 
         val xAxis = holder.view.line_chart.xAxis
 
@@ -82,11 +83,20 @@ class PlaceAdapter(val places: Array<Place>, val collects: Array<Collect>): Recy
         timestamps.forEach {
             val min = it / 60 % 60
             val hour = it / (60 * 60) % 24
-            val dateTime = if (min > 9) "$hour:$min" + "\nteste" else "$hour:0$min teste"
+            val day = dateHelper.timestamp2LocalDateTime(it).dayOfMonth
+            val month = dateHelper.timestamp2LocalDateTime(it).month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("PT-BR"))
+            val time = if (min > 9) "$hour:$min" else "$hour:0$min"
+            val dateTime = if (day > 9) "$time\n$day/$month" else "$time\n0$day/$month"
             xValsDateLabel.add(dateTime)
         }
 
         xAxis.valueFormatter = (DateFormatter(xValsDateLabel))
+
+        holder.view.line_chart.setXAxisRenderer(CustomXAxisRenderer(
+            holder.view.line_chart.viewPortHandler,
+            xAxis,
+            holder.view.line_chart.getTransformer(YAxis.AxisDependency.LEFT)
+        ))
 
         holder.view.text_equipment_description.text = place.equipment_description
         holder.view.text_place_description.text = place.place_description
@@ -113,4 +123,15 @@ class DateFormatter(private val xValsDateLabel: ArrayList<String>): ValueFormatt
         }
     }
 
+}
+
+class CustomXAxisRenderer(viewPortHandler: ViewPortHandler, xAxis: XAxis, trans: Transformer): XAxisRenderer(viewPortHandler, xAxis, trans) {
+
+    override fun drawLabel(c: Canvas?, formattedLabel: String?, x: Float, y: Float, anchor: MPPointF?, angleDegrees: Float) {
+        formattedLabel?.let {
+            val lines = it.split("\n")
+            Utils.drawXAxisValue(c, lines[0], x, y, mAxisLabelPaint, anchor, angleDegrees)
+            Utils.drawXAxisValue(c, lines[1], x, y + mAxisLabelPaint.textSize, mAxisLabelPaint, anchor, angleDegrees)
+        }
+    }
 }

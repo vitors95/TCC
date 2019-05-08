@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "515306856902",
+    "firebase_url": "https://tcc-firebase-e30ae.firebaseio.com",
+    "project_id": "tcc-firebase-e30ae",
+    "storage_bucket": "tcc-firebase-e30ae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515306856902:android:f21876b3b7e8df47",
+        "android_client_info": {
+          "package_name": "com.example.vitors.tcc_kotlin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "515306856902-a49m2s5e2rjh2fo08dp9f09m3ce8q9as.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1JyiTnE6JbmK7xG3ZiTnG9hQnqD8ieeQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "515306856902-a49m2s5e2rjh2fo08dp9f09m3ce8q9as.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

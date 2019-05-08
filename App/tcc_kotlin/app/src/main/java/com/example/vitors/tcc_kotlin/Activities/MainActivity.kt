@@ -10,6 +10,7 @@ import com.example.vitors.tcc_kotlin.Models.Place
 import com.example.vitors.tcc_kotlin.R
 import com.example.vitors.tcc_kotlin.Utils.API
 import com.example.vitors.tcc_kotlin.Utils.Constants
+import com.google.firebase.messaging.FirebaseMessaging
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        FirebaseMessaging.getInstance().subscribeToTopic("all")
 
         recyclerView_main.layoutManager = LinearLayoutManager(applicationContext)
 
