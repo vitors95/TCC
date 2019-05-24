@@ -1,6 +1,6 @@
-package com.example.vitors.tcc_kotlin.Utils
+package com.example.vitors.tcc_kotlin.utils.helpers
 
-import android.util.Log
+import com.example.vitors.tcc_kotlin.utils.constants.Constants
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset

@@ -1,11 +1,11 @@
-package com.example.vitors.tcc_kotlin.Utils
+package com.example.vitors.tcc_kotlin.utils.apis
 
-import com.example.vitors.tcc_kotlin.Models.Collect
-import com.example.vitors.tcc_kotlin.Models.Place
+import com.example.vitors.tcc_kotlin.models.Collect
+import com.example.vitors.tcc_kotlin.models.Place
 import io.reactivex.Observable
 import retrofit2.http.*
 
-interface API {
+interface AppClient {
     @GET("places")
     fun getPlaces(): Observable<Array<Place>>
 

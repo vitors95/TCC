@@ -1,15 +1,15 @@
-package com.example.vitors.tcc_kotlin.Activities
+package com.example.vitors.tcc_kotlin.activities
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
-import com.example.vitors.tcc_kotlin.Adapters.PlaceAdapter
-import com.example.vitors.tcc_kotlin.Models.Collect
-import com.example.vitors.tcc_kotlin.Models.Place
+import com.example.vitors.tcc_kotlin.utils.adapters.PlaceAdapter
+import com.example.vitors.tcc_kotlin.models.Collect
+import com.example.vitors.tcc_kotlin.models.Place
 import com.example.vitors.tcc_kotlin.R
-import com.example.vitors.tcc_kotlin.Utils.API
-import com.example.vitors.tcc_kotlin.Utils.Constants
+import com.example.vitors.tcc_kotlin.utils.apis.AppClient
+import com.example.vitors.tcc_kotlin.utils.constants.Constants
 import com.google.firebase.messaging.FirebaseMessaging
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        val api = retrofit.create(API::class.java)
+        val api = retrofit.create(AppClient::class.java)
 
         api.getPlaces()
             .subscribeOn(Schedulers.io())

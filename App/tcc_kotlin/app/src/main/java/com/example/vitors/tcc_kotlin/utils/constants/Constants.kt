@@ -1,4 +1,4 @@
-package com.example.vitors.tcc_kotlin.Utils
+package com.example.vitors.tcc_kotlin.utils.constants
 
 class Constants {
 

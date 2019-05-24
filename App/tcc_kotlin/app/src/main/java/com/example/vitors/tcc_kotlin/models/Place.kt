@@ -1,4 +1,4 @@
-package com.example.vitors.tcc_kotlin.Models
+package com.example.vitors.tcc_kotlin.models
 
 data class Place(
     var place_id: Int,

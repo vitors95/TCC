@@ -1,6 +1,4 @@
-package com.example.vitors.tcc_kotlin.Models
-
-import java.util.*
+package com.example.vitors.tcc_kotlin.models
 
 data class Collect(
     var collect_id: Int,

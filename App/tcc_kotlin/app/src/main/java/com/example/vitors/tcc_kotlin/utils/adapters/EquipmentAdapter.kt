@@ -1,10 +1,10 @@
-package com.example.vitors.tcc_kotlin.Adapters
+package com.example.vitors.tcc_kotlin.utils.adapters
 
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.vitors.tcc_kotlin.Models.Equipment
+import com.example.vitors.tcc_kotlin.models.Equipment
 import com.example.vitors.tcc_kotlin.R
 import kotlinx.android.synthetic.main.place_item.view.*
 
