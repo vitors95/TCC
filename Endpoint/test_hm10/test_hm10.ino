@@ -5,8 +5,10 @@ SoftwareSerial mySerial(3, 2); // RX, TX
 
 const int MPU_addr = 0x68; // Endereço I2C do MPU6050
 
-signed long accx, accy, accz, temp;
-signed long auxx, auxy, auxz, auxt = 0;
+signed long accX, accY, accZ, temp;
+signed long rmsX, rmsY, rmsZ;
+signed long auxAccX, auxAccY, auxAccZ, auxTemp = 0;
+unsigned long auxRmsX, auxRmsY, auxRmsZ = 0;
 int count = 0;
 byte *p;
 
@@ -53,9 +55,9 @@ void loop() {
   Wire.endTransmission(false);
   Wire.requestFrom(MPU_addr, 6, true);  // request a total of 6 registers
   
-  accx = Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)  
-  accy = Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-  accz = Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+  accX = Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)  
+  accY = Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+  accZ = Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
 
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x41);  // starting with register 0x41 (TEMP_OUT_H)
@@ -66,42 +68,60 @@ void loop() {
 
   delay(1000);
 
-  if (accx == 0 && accy == 0 && accz == 0) {
+  if (accX == 0 && accY == 0 && accZ == 0) {
     setMPU();
   } else {
-    auxx += accx;
-    auxy += accy;
-    auxz += accz;
-    auxt += temp;
+    auxAccX += accX;
+    auxAccY += accY;
+    auxAccZ += accZ;
+    auxRmsX += (accX * accX);
+    auxRmsY += (accY * accY);
+    auxRmsZ += (accZ * accZ);
+    auxTemp += temp;
     count++;
   }
 
-//  Serial.print("BUFF AcX = "); Serial.print(auxx);
-//  Serial.print(" | AcY = "); Serial.print(auxy);
-//  Serial.print(" | AcZ = "); Serial.print(auxz);
-//  Serial.print(" | Tmp = "); Serial.print(auxt);
+//  Serial.print("BUFF AcX = "); Serial.print(auxAccX);
+//  Serial.print(" | AcY = "); Serial.print(auxAccY);
+//  Serial.print(" | AcZ = "); Serial.print(auxAccZ);
+//  Serial.print(" | RmsX = "); Serial.print(auxRmsX);
+//  Serial.print(" | RmsY = "); Serial.print(auxRmsY);
+//  Serial.print(" | RmsZ = "); Serial.print(auxRmsZ);
+//  Serial.print(" | Tmp = "); Serial.print(auxTemp);
 //  Serial.println();
 
   if (count >= 10) {
-    accx = auxx/10;
-    accy = auxy/10;
-    accz = auxz/10;
-    temp = auxt/10;
+    accX = auxAccX/10;
+    accY = auxAccY/10;
+    accZ = auxAccZ/10;
+    rmsX = sqrt(auxRmsX/10);
+    rmsY = sqrt(auxRmsY/10);
+    rmsZ = sqrt(auxRmsZ/10);
+    temp = auxTemp/10;
 
-    auxx = 0;
-    auxy = 0;
-    auxz = 0;
-    auxt = 0;
+    auxAccX = 0;
+    auxAccY = 0;
+    auxAccZ = 0;
+    auxTemp = 0;
+    auxRmsX = 0;
+    auxRmsY = 0;
+    auxRmsZ = 0;
     count = 0;
 
-    sendData(accx);
-    sendData(accy);
-    sendData(accz);
+    sendData(accX);
+    sendData(accY);
+    sendData(accZ);
+    sendData(rmsX);
+    sendData(rmsY);
+    sendData(rmsZ);
     sendData(temp);
 
-//    Serial.print("AcX = "); Serial.print(accx);
-//    Serial.print(" | AcY = "); Serial.print(accy);
-//    Serial.print(" | AcZ = "); Serial.print(accz);
+//    Serial.print("AcX = "); Serial.print(accX);
+//    Serial.print(" | AcY = "); Serial.print(accY);
+//    Serial.print(" | AcZ = "); Serial.print(accZ);
+//    Serial.print(" | RmsX = "); Serial.print(rmsX);
+//    Serial.print(" | RmsY = "); Serial.print(rmsY);
+//    Serial.print(" | RmsZ = "); Serial.print(rmsZ);
 //    Serial.print(" | Tmp = "); Serial.print(temp);
 //    Serial.println();
   }

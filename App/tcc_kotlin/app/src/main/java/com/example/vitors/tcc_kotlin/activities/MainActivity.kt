@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.view.View
 import com.example.vitors.tcc_kotlin.utils.adapters.PlaceAdapter
 import com.example.vitors.tcc_kotlin.models.Collect
 import com.example.vitors.tcc_kotlin.models.Place
@@ -26,6 +27,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        progressBar.visibility = View.VISIBLE
         FirebaseMessaging.getInstance().subscribeToTopic("all")
 
         recyclerView_main.layoutManager = LinearLayoutManager(applicationContext)
@@ -49,16 +51,19 @@ class MainActivity : AppCompatActivity() {
                     .subscribe({
                         val collects = it
                         setPlaces(places, collects)
+                        progressBar.visibility = View.GONE
                     }, {
                         Log.e("ERRO", "Falha no getCollects")
+                        progressBar.visibility = View.GONE
                     })
             }, {
                 Log.e("ERRO", "Falha no getPlaces")
+                progressBar.visibility = View.GONE
             })
 
     }
 
-    fun setPlaces(places: Array<Place>, collects: Array<Collect>) {
+    private fun setPlaces(places: Array<Place>, collects: Array<Collect>) {
         recyclerView_main.adapter = PlaceAdapter(places, collects)
     }
 

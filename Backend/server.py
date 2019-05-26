@@ -3,10 +3,13 @@ from flask_cors import CORS
 from flask import abort
 from flask import make_response
 from flask import request
+from pyfcm import FCMNotification
 
 import time
 import sys
 import mysql.connector
+
+push_service = FCMNotification(api_key="AAAAd_quocY:APA91bH4wZXhrSJQ3KCRqvmmVc39agsuNo0qq4lT2HwDb9Eq4Guo-5yspMnwcWOrtkjiY9tankvx5gTcYjktldd82QSYoIp5HezvYeePLOhOFPi9oWHE4SNl564oO2xlPdDxaHs6mqEP")
 
 app = Flask(__name__)
 CORS(app)
@@ -26,6 +29,16 @@ def openConnection():
 def closeConnection(cr, cnx):
     cr.close()
     cnx.close()
+	
+def predictionAlert(col):
+	temp = col.collect['temp']
+	
+	if temp > -2900:
+		temp = (temp/340)+36.53
+		temp = round(temp, 2)
+		message = 'A temperatura do equipamento é de ' + str(temp) + ' °C'
+		result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
+	
 
 class collectClass:
 	def __init__(self, _collect, _gateway, _endpoint):
@@ -55,8 +68,11 @@ def receiveCollect():
 			dictionary.update({'accx': collectRow[1]})
 			dictionary.update({'accy': collectRow[2]})
 			dictionary.update({'accz': collectRow[3]})
-			dictionary.update({'temp': collectRow[4]})
-			dictionary.update({'data': str(collectRow[5])})
+			dictionary.update({'rmsx': collectRow[4]})
+			dictionary.update({'rmsy': collectRow[5]})
+			dictionary.update({'rmsz': collectRow[6]})
+			dictionary.update({'temp': collectRow[7]})
+			dictionary.update({'data': str(collectRow[8])})
 			resultado.append(dictionary)
 			dictionary = {}
 
@@ -74,8 +90,10 @@ def receiveCollect():
 				request.json['gateway'], 
 				request.json['endpoint']
 				)
+			
+		predictionAlert(col)		
 	
-	##########    Verifica se existe o endpoint e obtém o ID do Place      ##########
+	##########    Verifica se existe o endpoint e obtém o placeID     ##########
 	
 		queryEndpoint = ("SELECT Place_idPlace FROM Endpoint WHERE mac = ('%s')" % (col.endpoint['mac'])) 
 		(cr,cnx) = openConnection()
@@ -115,8 +133,8 @@ def receiveCollect():
 	
 	########## Grava no banco a coleta recebida do gateway         ##########
 	
-		queryCollect = ("INSERT INTO Collect (accx, accy, accz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, TIMESTAMP(NOW()), %d, %d)" % 
-			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['temp'], idGateway, idPlace))
+		queryCollect = ("INSERT INTO Collect (accx, accy, accz, rmsx, rmsy, rmsz, temp, data, Gateway_idGateway, Place_idPlace) VALUES (%d, %d, %d, %d, %d, %d, %d, TIMESTAMP(NOW()), %d, %d)" % 
+			  (col.collect['accx'], col.collect['accy'], col.collect['accz'], col.collect['rmsx'], col.collect['rmsy'], col.collect['rmsz'], col.collect['temp'], idGateway, idPlace))
 		(cr,cnx) = openConnection()
 		try: 
 			cr.execute(queryCollect)

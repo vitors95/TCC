@@ -4,6 +4,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.support.v7.widget.RecyclerView
 import android.view.View
+import com.example.vitors.tcc_kotlin.R
 import com.example.vitors.tcc_kotlin.models.Collect
 import com.example.vitors.tcc_kotlin.models.Place
 import com.example.vitors.tcc_kotlin.utils.helpers.DateHelper
@@ -29,6 +30,208 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
     private val dateHelper = DateHelper()
 
     fun setup(place: Place, collects: Array<Collect>) {
+
+        setupButtonListeners(collects)
+
+        itemView.text_equipment_description.text = place.equipment_description
+        itemView.text_place_description.text = place.place_description
+
+        setupXAxis(collects)
+    }
+
+    private fun setupButtonListeners(collects: Array<Collect>) {
+        itemView.tempButton.setOnClickListener {
+            setupTemp(collects)
+        }
+        itemView.xButton.setOnClickListener {
+            setupXAxis(collects)
+        }
+        itemView.yButton.setOnClickListener {
+            setupYAxis(collects)
+        }
+        itemView.zButton.setOnClickListener {
+            setupZAxis(collects)
+        }
+    }
+
+    private fun setupXAxis(collects: Array<Collect>) {
+        val entries: ArrayList<Entry> = arrayListOf()
+        val timestamps: ArrayList<Long> = arrayListOf()
+
+        collects.forEachIndexed { index, collect ->
+            entries.add(Entry(index.toFloat(), collect.accx.toFloat()))
+            timestamps.add(dateHelper.dateString2Timetamp(collect.data))
+        }
+
+        val dataSet = LineDataSet(entries, "Aceleração no eixo X (m/s²)")
+        dataSet.fillAlpha = 1100
+        dataSet.color = Color.RED
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.setDrawValues(false)
+        dataSet.setDrawCircles(false)
+        val lineData = LineData(dataSet)
+
+        itemView.line_chart.data = lineData
+        itemView.line_chart.description.text = ""
+        itemView.line_chart.legend.isEnabled = true
+        itemView.line_chart.invalidate()
+        itemView.line_chart.axisRight.isEnabled = false
+        itemView.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisLeft.setDrawGridLines(false)
+        itemView.line_chart.axisRight.setDrawGridLines(false)
+        itemView.line_chart.xAxis.setDrawGridLines(false)
+        itemView.line_chart.extraBottomOffset = 25f
+
+        val xAxis = itemView.line_chart.xAxis
+
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.labelCount = 4
+        xAxis.granularity = 1f
+        xAxis.isGranularityEnabled = true
+
+        val xValsDateLabel = ArrayList<String>()
+
+        timestamps.forEach {
+            val min = it / 60 % 60
+            val hour = it / (60 * 60) % 24
+            val day = dateHelper.timestamp2LocalDateTime(it).dayOfMonth
+            val month = dateHelper.timestamp2LocalDateTime(it).month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("PT-BR"))
+            val time = if (min > 9) "$hour:$min" else "$hour:0$min"
+            val dateTime = if (day > 9) "$time\n$day/$month" else "$time\n0$day/$month"
+            xValsDateLabel.add(dateTime)
+        }
+
+        xAxis.valueFormatter = (DateFormatter(xValsDateLabel))
+
+        itemView.line_chart.setXAxisRenderer(
+            CustomXAxisRenderer(
+                itemView.line_chart.viewPortHandler,
+                xAxis,
+                itemView.line_chart.getTransformer(YAxis.AxisDependency.LEFT)
+            )
+        )
+    }
+
+    private fun setupYAxis(collects: Array<Collect>) {
+        val entries: ArrayList<Entry> = arrayListOf()
+        val timestamps: ArrayList<Long> = arrayListOf()
+
+        collects.forEachIndexed { index, collect ->
+            entries.add(Entry(index.toFloat(), collect.accy.toFloat()))
+            timestamps.add(dateHelper.dateString2Timetamp(collect.data))
+        }
+
+        val dataSet = LineDataSet(entries, "Aceleração no eixo Y (m/s²)")
+        dataSet.fillAlpha = 1100
+        dataSet.color = Color.RED
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.setDrawValues(false)
+        dataSet.setDrawCircles(false)
+        val lineData = LineData(dataSet)
+
+        itemView.line_chart.data = lineData
+        itemView.line_chart.description.text = ""
+        itemView.line_chart.legend.isEnabled = true
+        itemView.line_chart.invalidate()
+        itemView.line_chart.axisRight.isEnabled = false
+        itemView.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisLeft.setDrawGridLines(false)
+        itemView.line_chart.axisRight.setDrawGridLines(false)
+        itemView.line_chart.xAxis.setDrawGridLines(false)
+        itemView.line_chart.extraBottomOffset = 25f
+
+        val xAxis = itemView.line_chart.xAxis
+
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.labelCount = 4
+        xAxis.granularity = 1f
+        xAxis.isGranularityEnabled = true
+
+        val xValsDateLabel = ArrayList<String>()
+
+        timestamps.forEach {
+            val min = it / 60 % 60
+            val hour = it / (60 * 60) % 24
+            val day = dateHelper.timestamp2LocalDateTime(it).dayOfMonth
+            val month = dateHelper.timestamp2LocalDateTime(it).month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("PT-BR"))
+            val time = if (min > 9) "$hour:$min" else "$hour:0$min"
+            val dateTime = if (day > 9) "$time\n$day/$month" else "$time\n0$day/$month"
+            xValsDateLabel.add(dateTime)
+        }
+
+        xAxis.valueFormatter = (DateFormatter(xValsDateLabel))
+
+        itemView.line_chart.setXAxisRenderer(
+            CustomXAxisRenderer(
+                itemView.line_chart.viewPortHandler,
+                xAxis,
+                itemView.line_chart.getTransformer(YAxis.AxisDependency.LEFT)
+            )
+        )
+    }
+
+    private fun setupZAxis(collects: Array<Collect>) {
+        val entries: ArrayList<Entry> = arrayListOf()
+        val timestamps: ArrayList<Long> = arrayListOf()
+
+        collects.forEachIndexed { index, collect ->
+            entries.add(Entry(index.toFloat(), collect.accz.toFloat()))
+            timestamps.add(dateHelper.dateString2Timetamp(collect.data))
+        }
+
+        val dataSet = LineDataSet(entries, "Aceleração no eixo Z (m/s²)")
+        dataSet.fillAlpha = 1100
+        dataSet.color = Color.RED
+        dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
+        dataSet.setDrawValues(false)
+        dataSet.setDrawCircles(false)
+        val lineData = LineData(dataSet)
+
+        itemView.line_chart.data = lineData
+        itemView.line_chart.description.text = ""
+        itemView.line_chart.legend.isEnabled = true
+        itemView.line_chart.invalidate()
+        itemView.line_chart.axisRight.isEnabled = false
+        itemView.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
+        itemView.line_chart.axisLeft.setDrawGridLines(false)
+        itemView.line_chart.axisRight.setDrawGridLines(false)
+        itemView.line_chart.xAxis.setDrawGridLines(false)
+        itemView.line_chart.extraBottomOffset = 25f
+
+        val xAxis = itemView.line_chart.xAxis
+
+        xAxis.position = XAxis.XAxisPosition.BOTTOM
+        xAxis.labelCount = 4
+        xAxis.granularity = 1f
+        xAxis.isGranularityEnabled = true
+
+        val xValsDateLabel = ArrayList<String>()
+
+        timestamps.forEach {
+            val min = it / 60 % 60
+            val hour = it / (60 * 60) % 24
+            val day = dateHelper.timestamp2LocalDateTime(it).dayOfMonth
+            val month = dateHelper.timestamp2LocalDateTime(it).month.getDisplayName(TextStyle.SHORT, Locale.forLanguageTag("PT-BR"))
+            val time = if (min > 9) "$hour:$min" else "$hour:0$min"
+            val dateTime = if (day > 9) "$time\n$day/$month" else "$time\n0$day/$month"
+            xValsDateLabel.add(dateTime)
+        }
+
+        xAxis.valueFormatter = (DateFormatter(xValsDateLabel))
+
+        itemView.line_chart.setXAxisRenderer(
+            CustomXAxisRenderer(
+                itemView.line_chart.viewPortHandler,
+                xAxis,
+                itemView.line_chart.getTransformer(YAxis.AxisDependency.LEFT)
+            )
+        )
+    }
+
+    private fun setupTemp(collects: Array<Collect>) {
         val entries: ArrayList<Entry> = arrayListOf()
         val timestamps: ArrayList<Long> = arrayListOf()
 
@@ -85,9 +288,6 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
                 itemView.line_chart.getTransformer(YAxis.AxisDependency.LEFT)
             )
         )
-
-        itemView.text_equipment_description.text = place.equipment_description
-        itemView.text_place_description.text = place.place_description
     }
 
 }

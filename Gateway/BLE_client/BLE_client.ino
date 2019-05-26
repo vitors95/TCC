@@ -27,6 +27,9 @@ struct Disp_BLE{
     signed int accx;
     signed int accy;
     signed int accz;
+    signed int rmsx;
+    signed int rmsy;
+    signed int rmsz;
     signed int temp;
     signed char auxByte;
 } aux;
@@ -60,7 +63,7 @@ bool connect_wifi(){
     }
 }
 
-void send_data(int accx, int accy, int accz, int temp){  
+void send_data(int accx, int accy, int accz, int rmsx, int rmsy, int rmsz, int temp){  
     DynamicJsonBuffer JSONbuffer;   //Declaring static JSON buffer
     JsonObject& JSONencoder = JSONbuffer.createObject(); 
 
@@ -72,6 +75,9 @@ void send_data(int accx, int accy, int accz, int temp){
     collect["accx"] = accx;
     collect["accy"] = accy;
     collect["accz"] = accz;
+    collect["rmsx"] = rmsx;
+    collect["rmsy"] = rmsy;
+    collect["rmsz"] = rmsz;
     collect["temp"] = temp;
 
     JsonObject& gateway = JSONencoder.createNestedObject("gateway");
@@ -121,7 +127,16 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, ui
     aux.accz = (aux.auxByte << 8) | (pData[4]);
 
     aux.auxByte = pData[7];
-    aux.temp = (aux.auxByte << 8) | (pData[6]);
+    aux.rmsx = (aux.auxByte << 8) | (pData[6]);
+
+    aux.auxByte = pData[9];
+    aux.rmsy = (aux.auxByte << 8) | (pData[8]);
+
+    aux.auxByte = pData[11];
+    aux.rmsz = (aux.auxByte << 8) | (pData[10]);
+
+    aux.auxByte = pData[13];
+    aux.temp = (aux.auxByte << 8) | (pData[12]);
 
     aux.leu = true;
     timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
@@ -265,6 +280,9 @@ void loop() {
             (int) aux.accx,
             (int) aux.accy,
             (int) aux.accz,
+            (int) aux.rmsx,
+            (int) aux.rmsy,
+            (int) aux.rmsz,
             (int) aux.temp
           );
         }
