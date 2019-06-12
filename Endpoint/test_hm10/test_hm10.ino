@@ -24,21 +24,10 @@ void setMPU() {
   Wire.write(0);
   Wire.endTransmission(true);
 
-  // configure gyro
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x1B);                           // Access the gyro configuration register
-  Wire.write(0);
-  Wire.endTransmission(true);
-
-  // configure accelerometer
+   // configure accelerometer
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x1C);                           // Access the accelerometer configuration register
   Wire.write(0);
-  Wire.endTransmission(true);
-
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x19);
-  Wire.write(7);
   Wire.endTransmission(true);
 }
 
@@ -53,17 +42,11 @@ void loop() {
   Wire.beginTransmission(MPU_addr);
   Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission(false);
-  Wire.requestFrom(MPU_addr, 6, true);  // request a total of 6 registers
+  Wire.requestFrom(MPU_addr, 8, true);  // request a total of 8 registers
   
   accX = Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)  
   accY = Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-  accZ = Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
-
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x41);  // starting with register 0x41 (TEMP_OUT_H)
-  Wire.endTransmission(false);
-  Wire.requestFrom(MPU_addr, 2, true);  // request a total of 2 registers
-  
+  accZ = Wire.read()<<8|Wire.read();  // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)  
   temp = Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
 
   delay(1000);

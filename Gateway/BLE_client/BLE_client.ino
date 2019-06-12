@@ -273,8 +273,6 @@ void loop() {
     if (aux.leu){
       if (connect_wifi()){
         String mac_atual = aux.advertisedDevice.getAddress().toString().c_str();
-        Serial.println("MAC ATUAL");
-        Serial.println(mac_atual);
         if(mac_atual.equals(BEACON)){
           send_data(
             (int) aux.accx,
