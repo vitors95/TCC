@@ -90,6 +90,7 @@ void setup() {
   accelgyro.setXGyroOffset(0);
   accelgyro.setYGyroOffset(0);
   accelgyro.setZGyroOffset(0);
+  accelgyro.setFullScaleAccelRange(1);
 }
 
 ///////////////////////////////////   LOOP   ////////////////////////////////////

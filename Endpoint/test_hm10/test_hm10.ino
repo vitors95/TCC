@@ -26,12 +26,8 @@ void setMPU() {
   Wire.write(0);
   Wire.endTransmission(true);
 
-   // configure accelerometer
-  Wire.beginTransmission(MPU_addr);
-  Wire.write(0x1C);                           // Access the accelerometer configuration register
-  Wire.write(0);
-  Wire.endTransmission(true);
-
+  mpu.setFullScaleAccelRange(1); // +-4g
+  
   mpu.setXAccelOffset(1352);
   mpu.setYAccelOffset(353);
   mpu.setZAccelOffset(1207);
@@ -90,23 +86,23 @@ void loop() {
     count++;
   }
 
-//  Serial.print("BUFF Inst AccX = "); Serial.print(accX);
-//  Serial.print(" | Inst AccY = "); Serial.print(accY);
-//  Serial.print(" | Inst AccZ = "); Serial.print(accZ);
-//  Serial.print(" | Max AccX = "); Serial.print(maxAccX);
-//  Serial.print(" | Max AccY = "); Serial.print(maxAccY);
-//  Serial.print(" | Max AccZ = "); Serial.print(maxAccZ);
-//  Serial.print(" | Min AccX = "); Serial.print(minAccX);
-//  Serial.print(" | Min AccY = "); Serial.print(minAccY);
-//  Serial.print(" | Min AccZ = "); Serial.print(minAccZ);
-//  Serial.print(" | RmsX = "); Serial.print(auxRmsX);
-//  Serial.print(" | RmsY = "); Serial.print(auxRmsY);
-//  Serial.print(" | RmsZ = "); Serial.print(auxRmsZ);
-//  Serial.print(" | Rms2X = "); Serial.print(aux2RmsX);
-//  Serial.print(" | Rms2Y = "); Serial.print(aux2RmsY);
-//  Serial.print(" | Rms2Z = "); Serial.print(aux2RmsZ);
-//  Serial.print(" | Tmp = "); Serial.print(auxTemp);
-//  Serial.println();
+  Serial.print("BUFF Inst AccX = "); Serial.print(accX);
+  Serial.print(" | Inst AccY = "); Serial.print(accY);
+  Serial.print(" | Inst AccZ = "); Serial.print(accZ);
+  Serial.print(" | Max AccX = "); Serial.print(maxAccX);
+  Serial.print(" | Max AccY = "); Serial.print(maxAccY);
+  Serial.print(" | Max AccZ = "); Serial.print(maxAccZ);
+  Serial.print(" | Min AccX = "); Serial.print(minAccX);
+  Serial.print(" | Min AccY = "); Serial.print(minAccY);
+  Serial.print(" | Min AccZ = "); Serial.print(minAccZ);
+  Serial.print(" | RmsX = "); Serial.print(auxRmsX);
+  Serial.print(" | RmsY = "); Serial.print(auxRmsY);
+  Serial.print(" | RmsZ = "); Serial.print(auxRmsZ);
+  Serial.print(" | Rms2X = "); Serial.print(aux2RmsX);
+  Serial.print(" | Rms2Y = "); Serial.print(aux2RmsY);
+  Serial.print(" | Rms2Z = "); Serial.print(aux2RmsZ);
+  Serial.print(" | Tmp = "); Serial.print(auxTemp);
+  Serial.println();
 
   if (count >= 20) {
     accX = maxAccX - minAccX; // pico-a-pico
