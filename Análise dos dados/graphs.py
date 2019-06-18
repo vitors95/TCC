@@ -107,46 +107,46 @@ plt.savefig('temperatura.png', dpi=300)
 
 fig, pos = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(10, 10))
 
-pos[0].plot(sample, normal_accx[0:300]/8192, color="blue", marker="o")
-pos[0].plot(sample, anormal_accx[0:300]/8192, color="red", marker="x")
+pos[0].plot(sample, normal_accx[0:300]/8192, color="blue", marker="o", label="Funcionamento normal")
+pos[0].plot(sample, anormal_accx[0:300]/8192, color="red", label="Funcionamento anormal")
 pos[0].set_ylabel('Pico a Pico (g)')
 
 pos[1].plot(sample, normal_rmsx[0:300]/8192, color="blue", marker="o")
-pos[1].plot(sample, anormal_rmsx[0:300]/8192, color="red", marker="x")
+pos[1].plot(sample, anormal_rmsx[0:300]/8192, color="red")
 pos[1].set_ylabel('RMS (g)')
 
+fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-fig.text(0.025, 0.5, 'Temperatura (°C)', va='center', rotation='vertical')
 plt.savefig('eixoX.png', dpi=300)
 
 ### EIXO Y (Anormal e normal) ###
 
 fig, pos = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(10, 10))
 
-pos[0].plot(sample, normal_accy[0:300]/8192, color="blue", marker="o")
-pos[0].plot(sample, anormal_accy[0:300]/8192, color="red", marker="x")
+pos[0].plot(sample, normal_accy[0:300]/8192, color="blue", marker="o", label="Funcionamento normal")
+pos[0].plot(sample, anormal_accy[0:300]/8192, color="red", label="Funcionamento anormal")
 pos[0].set_ylabel('Pico a Pico (g)')
 
 pos[1].plot(sample, normal_rmsy[0:300]/8192, color="blue", marker="o")
-pos[1].plot(sample, anormal_rmsy[0:300]/8192, color="red", marker="x")
+pos[1].plot(sample, anormal_rmsy[0:300]/8192, color="red")
 pos[1].set_ylabel('RMS (g)')
 
+fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-fig.text(0.025, 0.5, 'Temperatura (°C)', va='center', rotation='vertical')
 plt.savefig('eixoY.png', dpi=300)
 
 ### EIXO Z (Anormal e normal) ###
 
 fig, pos = plt.subplots(2, 1, sharex=True, sharey=True, figsize=(10, 10))
 
-pos[0].plot(sample, normal_accz[0:300]/8192, color="blue", marker="o")
-pos[0].plot(sample, anormal_accz[0:300]/8192, color="red", marker="x")
+pos[0].plot(sample, normal_accz[0:300]/8192, color="blue", marker="o", label="Funcionamento normal")
+pos[0].plot(sample, anormal_accz[0:300]/8192, color="red", label="Funcionamento anormal")
 pos[0].set_ylabel('Pico a Pico (g)')
 
 pos[1].plot(sample, normal_rmsz[0:300]/8192, color="blue", marker="o")
-pos[1].plot(sample, anormal_rmsz[0:300]/8192, color="red", marker="x")
+pos[1].plot(sample, anormal_rmsz[0:300]/8192, color="red")
 pos[1].set_ylabel('RMS (g)')
 
+fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-fig.text(0.025, 0.5, 'Temperatura (°C)', va='center', rotation='vertical')
 plt.savefig('eixoZ.png', dpi=300)
