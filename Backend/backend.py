@@ -33,7 +33,7 @@ def closeConnection(cr, cnx):
 def predictionAlert(col):
 	temp = col.collect['temp']
 	
-	if temp > -2900:
+	if temp > 1860:
 		temp = (temp/340)+36.53
 		temp = round(temp, 2)
 		message = 'A temperatura do equipamento é de ' + str(temp) + ' °C'
