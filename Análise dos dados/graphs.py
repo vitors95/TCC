@@ -34,7 +34,7 @@ pos[0][1].set_title('RMS')
 #fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
 fig.text(0.025, 0.5, 'Aceleração (g)', va='center', rotation='vertical')
-plt.savefig('aceleracao_funcionamento_normal.png', dpi=300)
+plt.savefig('aceleracao_funcionamento_normal.png', bbox_inches='tight', dpi=300)
 
 ### SEGUNDO CONJUNTO DE DADOS ###
 
@@ -67,7 +67,7 @@ pos[0][1].set_yticks([0.5, 1, 1.5, 2.0, 2.5, 3.0, 3.5, 4])
 #fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
 fig.text(0.025, 0.5, 'Aceleração (g)', va='center', rotation='vertical')
-plt.savefig('aceleracao_funcionamento_anormal.png', dpi=300)
+plt.savefig('aceleracao_funcionamento_anormal.png', bbox_inches='tight', dpi=300)
 
 ### TERCEIRO CONJUNTO DE DADOS ###
 
@@ -87,7 +87,7 @@ pos[2].set_ylabel('Eixo Z')
 fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'RMS (g)', ha='center')
 fig.text(0.025, 0.5, 'Pico a Pico (g)', va='center', rotation='vertical')
-plt.savefig('dispersao.png', dpi=300)
+plt.savefig('dispersao.png', bbox_inches='tight', dpi=300)
 
 ### TEMPERATURA ###
 
@@ -101,7 +101,7 @@ pos[1].set_ylabel('Funcionamento anormal')
 
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
 fig.text(0.025, 0.5, 'Temperatura (°C)', va='center', rotation='vertical')
-plt.savefig('temperatura.png', dpi=300)
+plt.savefig('temperatura.png', bbox_inches='tight', dpi=300)
 
 ### EIXO X (Anormal e normal) ###
 
@@ -117,7 +117,7 @@ pos[1].set_ylabel('RMS (g)')
 
 fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-plt.savefig('eixoX.png', dpi=300)
+plt.savefig('eixoX.png', bbox_inches='tight', dpi=300)
 
 ### EIXO Y (Anormal e normal) ###
 
@@ -133,7 +133,7 @@ pos[1].set_ylabel('RMS (g)')
 
 fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-plt.savefig('eixoY.png', dpi=300)
+plt.savefig('eixoY.png', bbox_inches='tight', dpi=300)
 
 ### EIXO Z (Anormal e normal) ###
 
@@ -149,4 +149,4 @@ pos[1].set_ylabel('RMS (g)')
 
 fig.legend(loc='lower right')
 fig.text(0.5, 0.04, 'Tempo (min)', ha='center')
-plt.savefig('eixoZ.png', dpi=300)
+plt.savefig('eixoZ.png', bbox_inches='tight', dpi=300)

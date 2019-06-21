@@ -10,12 +10,10 @@ import android.support.v4.app.NotificationCompat
 import com.example.vitors.tcc_kotlin.activities.MainActivity
 import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.messaging.FirebaseMessagingService
-import io.reactivex.disposables.Disposable
 
 class FirebaseHelper : FirebaseMessagingService() {
     private val context: Context
         get() = applicationContext
-    private var disposable: Disposable? = null
 
 
     override fun onMessageReceived(p0: RemoteMessage?) {
@@ -27,11 +25,8 @@ class FirebaseHelper : FirebaseMessagingService() {
     private fun buildNotification(title: String?, data: String?) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val builder = createNotificationBuilder(notificationManager)
-
         val pendingIntent = buildPendingIntent()
-
         updateNotificationBuilder(builder, title, data, pendingIntent)
-
         notificationManager.notify(0, builder.build())
     }
 
@@ -63,22 +58,10 @@ class FirebaseHelper : FirebaseMessagingService() {
     }
 
     private fun buildIntent(): Intent {
-//        return if (PreferencesHelper.isLoggedIn) {
-//            notificationIntent(localEvent)
-//        } else {
-//            welcomeIntent()
-//        }
-        return welcomeIntent()
+        return startIntent()
     }
 
-//    private fun notificationIntent(localEvent: LocalEvent?): Intent {
-//        val intent = if (localEvent?.event?.eventId == EventCode.ZONE_TRIGGERED.code) Intent(context, EventDetailsActivity::class.java) else Intent(context, DashboardActivity::class.java)
-//        intent.putExtra(IntentConstants.LOCAL_EVENT, localEvent)
-//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-//        return intent
-//    }
-
-    private fun welcomeIntent(): Intent {
+    private fun startIntent(): Intent {
         val intent = Intent(context, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return intent

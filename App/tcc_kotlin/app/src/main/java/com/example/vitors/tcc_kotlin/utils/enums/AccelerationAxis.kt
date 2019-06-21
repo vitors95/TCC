@@ -1,11 +1,9 @@
 package com.example.vitors.tcc_kotlin.utils.enums
 
-enum class Axis {
+enum class AccelerationAxis {
 
-    XAxis,
-
-    YAxis,
-
-    ZAxis
+    X_ACCELERATION_AXIS,
+    Y_ACCELERATION_AXIS,
+    Z_ACCELERATION_AXIS
 
 }

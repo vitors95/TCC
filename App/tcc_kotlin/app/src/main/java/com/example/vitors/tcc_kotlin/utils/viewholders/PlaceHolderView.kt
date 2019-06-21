@@ -2,12 +2,13 @@ package com.example.vitors.tcc_kotlin.utils.viewholders
 
 import android.graphics.Canvas
 import android.graphics.Color
+import android.opengl.Visibility
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import com.example.vitors.tcc_kotlin.models.Collect
 import com.example.vitors.tcc_kotlin.models.Place
+import com.example.vitors.tcc_kotlin.utils.enums.AccelerationAxis
 import com.example.vitors.tcc_kotlin.utils.helpers.DateHelper
-import com.github.mikephil.charting.charts.ScatterChart
 import com.github.mikephil.charting.components.AxisBase
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.components.YAxis
@@ -24,32 +25,68 @@ import java.util.*
 import kotlin.collections.ArrayList
 import com.github.mikephil.charting.utils.EntryXComparator
 
-
-
 class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
 
     private val dateHelper = DateHelper()
+    private var selectedMode: Boolean = true // true for Dispersion mode and false for Time mode
+    private var selectedAccelerationAxis: AccelerationAxis = AccelerationAxis.X_ACCELERATION_AXIS
 
     fun setup(place: Place, collects: Array<Collect>) {
         itemView.text_equipment_description.text = place.equipment_description
         itemView.text_place_description.text = place.place_description
 
         setupButtonListeners(collects)
-        setupXAxis(collects)
+        setupMode(collects)
     }
 
     private fun setupButtonListeners(collects: Array<Collect>) {
         itemView.tempButton.setOnClickListener {
+            itemView.modeButton.visibility = View.INVISIBLE
+            itemView.text_x_label.text = "Data"
+            itemView.text_y_label.text = "Temperatura (°C)"
             setupTemp(collects)
         }
         itemView.xButton.setOnClickListener {
-            setupXAxis(collects)
+            itemView.modeButton.visibility = View.VISIBLE
+            selectedAccelerationAxis = AccelerationAxis.X_ACCELERATION_AXIS
+            setupMode(collects)
         }
         itemView.yButton.setOnClickListener {
-            setupYAxis(collects)
+            itemView.modeButton.visibility = View.VISIBLE
+            selectedAccelerationAxis = AccelerationAxis.Y_ACCELERATION_AXIS
+            setupMode(collects)
         }
         itemView.zButton.setOnClickListener {
-            setupZAxis(collects)
+            itemView.modeButton.visibility = View.VISIBLE
+            selectedAccelerationAxis = AccelerationAxis.Z_ACCELERATION_AXIS
+            setupMode(collects)
+        }
+        itemView.modeButton.setOnClickListener {
+            selectedMode = !selectedMode
+            setupMode(collects)
+        }
+    }
+
+    private fun setupMode(collects: Array<Collect>) {
+        if (selectedMode) {
+            itemView.modeButton.text = "Dispersão"
+            itemView.text_x_label.text = "RMS (g)"
+            itemView.text_y_label.text = "Pico a Pico (g)"
+            when(selectedAccelerationAxis) {
+                AccelerationAxis.X_ACCELERATION_AXIS -> setupXAxis(collects)
+                AccelerationAxis.Y_ACCELERATION_AXIS -> setupYAxis(collects)
+                AccelerationAxis.Z_ACCELERATION_AXIS -> setupZAxis(collects)
+            }
+        }
+        else {
+            itemView.modeButton.text = "Tempo"
+            itemView.text_x_label.text = "Data"
+            itemView.text_y_label.text = "Pico a Pico (g)"
+            when(selectedAccelerationAxis) {
+                AccelerationAxis.X_ACCELERATION_AXIS -> setupXAxisInTime(collects)
+                AccelerationAxis.Y_ACCELERATION_AXIS -> setupYAxisInTime(collects)
+                AccelerationAxis.Z_ACCELERATION_AXIS -> setupZAxisInTime(collects)
+            }
         }
     }
 
@@ -60,7 +97,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         val entries: ArrayList<Entry> = arrayListOf()
 
         collects.forEach { collect ->
-            entries.add(Entry(collect.rmsx.toFloat(), collect.accx.toFloat()))
+            entries.add(Entry(collect.rmsx.toFloat()/8192, collect.accx.toFloat()/8192))
         }
 
         Collections.sort(entries, EntryXComparator())
@@ -76,7 +113,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         val entries: ArrayList<Entry> = arrayListOf()
 
         collects.forEach { collect ->
-            entries.add(Entry(collect.rmsy.toFloat(), collect.accy.toFloat()))
+            entries.add(Entry(collect.rmsy.toFloat()/8192, collect.accy.toFloat()/8192))
         }
 
         Collections.sort(entries, EntryXComparator())
@@ -92,7 +129,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         val entries: ArrayList<Entry> = arrayListOf()
 
         collects.forEach { collect ->
-            entries.add(Entry(collect.rmsz.toFloat(), collect.accz.toFloat()))
+            entries.add(Entry(collect.rmsz.toFloat()/8192, collect.accz.toFloat()/8192))
         }
 
         Collections.sort(entries, EntryXComparator())
@@ -119,13 +156,12 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
     private fun setupXAxisInTime(collects: Array<Collect>) {
         resetScatterChart()
         resetLineChart()
-        itemView.line_chart.visibility = View.VISIBLE
 
         val entries: ArrayList<Entry> = arrayListOf()
         val timestamps: ArrayList<Long> = arrayListOf()
 
         collects.forEachIndexed { index, collect ->
-            entries.add(Entry(index.toFloat(), collect.accx.toFloat()))
+            entries.add(Entry(index.toFloat(), collect.accx.toFloat()/8192))
             timestamps.add(dateHelper.dateString2Timetamp(collect.data))
         }
 
@@ -135,13 +171,12 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
     private fun setupYAxisInTime(collects: Array<Collect>) {
         resetScatterChart()
         resetLineChart()
-        itemView.line_chart.visibility = View.VISIBLE
 
         val entries: ArrayList<Entry> = arrayListOf()
         val timestamps: ArrayList<Long> = arrayListOf()
 
         collects.forEachIndexed { index, collect ->
-            entries.add(Entry(index.toFloat(), collect.accy.toFloat()))
+            entries.add(Entry(index.toFloat(), collect.accy.toFloat()/8192))
             timestamps.add(dateHelper.dateString2Timetamp(collect.data))
         }
 
@@ -151,13 +186,12 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
     private fun setupZAxisInTime(collects: Array<Collect>) {
         resetScatterChart()
         resetLineChart()
-        itemView.line_chart.visibility = View.VISIBLE
 
         val entries: ArrayList<Entry> = arrayListOf()
         val timestamps: ArrayList<Long> = arrayListOf()
 
         collects.forEachIndexed { index, collect ->
-            entries.add(Entry(index.toFloat(), collect.accz.toFloat()))
+            entries.add(Entry(index.toFloat(), collect.accz.toFloat()/8192))
             timestamps.add(dateHelper.dateString2Timetamp(collect.data))
         }
 
@@ -166,7 +200,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
     }
 
     private fun setupLineChart(entries: ArrayList<Entry>, timestamps: ArrayList<Long>) {
-        val dataSet = LineDataSet(entries, "Temperatura (°C)")
+        val dataSet = LineDataSet(entries, "")
         dataSet.fillAlpha = 1100
         dataSet.color = Color.RED
         dataSet.mode = LineDataSet.Mode.CUBIC_BEZIER
@@ -177,13 +211,13 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         itemView.line_chart.data = lineData
         itemView.line_chart.visibility = View.VISIBLE
         itemView.line_chart.description.text = ""
-        itemView.line_chart.legend.isEnabled = true
+        itemView.line_chart.legend.isEnabled = false
         itemView.line_chart.invalidate()
         itemView.line_chart.axisRight.isEnabled = false
         itemView.line_chart.axisLeft.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
         itemView.line_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
-        itemView.scatter_chart.axisLeft.granularity = 1f
-        itemView.scatter_chart.axisLeft.isGranularityEnabled = true
+        itemView.line_chart.axisLeft.granularity = 0.1f
+        itemView.line_chart.axisLeft.isGranularityEnabled = true
         itemView.line_chart.axisLeft.setDrawGridLines(false)
         itemView.line_chart.axisRight.setDrawGridLines(false)
         itemView.line_chart.xAxis.setDrawGridLines(false)
@@ -235,7 +269,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         itemView.scatter_chart.axisRight.setPosition(YAxis.YAxisLabelPosition.OUTSIDE_CHART)
         itemView.scatter_chart.axisLeft.axisMinimum = 0f
         itemView.scatter_chart.axisRight.axisMinimum = 0f
-        itemView.scatter_chart.axisLeft.granularity = 1f
+        itemView.scatter_chart.axisLeft.granularity = 0.1f
         itemView.scatter_chart.axisLeft.isGranularityEnabled = true
         itemView.scatter_chart.axisLeft.setDrawGridLines(false)
         itemView.scatter_chart.axisRight.setDrawGridLines(false)
@@ -247,7 +281,7 @@ class PlaceHolderView(itemView: View): RecyclerView.ViewHolder(itemView) {
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.axisMinimum = 0f
         xAxis.labelCount = 4
-        xAxis.granularity = 1f
+        xAxis.granularity = 0.1f
         xAxis.isGranularityEnabled = true
 
     }
