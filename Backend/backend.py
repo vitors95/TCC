@@ -4,6 +4,9 @@ from flask import abort
 from flask import make_response
 from flask import request
 from pyfcm import FCMNotification
+import numpy as np
+import pandas as pd
+from sklearn.cluster import KMeans
 
 import time
 import sys
@@ -14,14 +17,113 @@ push_service = FCMNotification(api_key="AAAAd_quocY:APA91bH4wZXhrSJQ3KCRqvmmVc39
 app = Flask(__name__)
 CORS(app)
 
+###################################    INTEGRAÇÃO COM O K-MEANS        ###################################
+
+predictionCount = 0
+
+def prediction(col):
+	dataset = pd.read_csv('dataset_normalized_acceleration.csv')
+	
+	resultado = []
+	dictionary = {}
+
+	placeID = 1
+	(cr, cnx) = openConnection()
+	query = "SELECT * FROM (SELECT * FROM Collect WHERE Place_idPlace = (%s) ORDER BY idCollect DESC LIMIT 5) sub ORDER BY idCollect ASC"
+	dados = (placeID, )
+		
+	cr.execute(query, dados)
+	for collectRow in cr.fetchall():
+		dictionary.update({'accx': collectRow[1]})
+		dictionary.update({'accy': collectRow[2]})
+		dictionary.update({'accz': collectRow[3]})
+		dictionary.update({'rmsx': collectRow[4]})
+		dictionary.update({'rmsy': collectRow[5]})
+		dictionary.update({'rmsz': collectRow[6]})
+		resultado.append(dictionary)
+		dictionary = {}
+
+	closeConnection(cr, cnx)  
+		
+	dataset_last_5 = pd.DataFrame({
+							"accx": [resultado[0]['accx']/8192, resultado[1]['accx']/8192, resultado[2]['accx']/8192, resultado[3]['accx']/8192, resultado[4]['accx']/8192], 
+							"accy": [resultado[0]['accy']/8192, resultado[1]['accy']/8192, resultado[2]['accy']/8192, resultado[3]['accy']/8192, resultado[4]['accy']/8192],
+							"accz": [resultado[0]['accz']/8192, resultado[1]['accz']/8192, resultado[2]['accz']/8192, resultado[3]['accz']/8192, resultado[4]['accz']/8192],
+							"rmsx": [resultado[0]['rmsx']/8192, resultado[1]['rmsx']/8192, resultado[2]['rmsx']/8192, resultado[3]['rmsx']/8192, resultado[4]['rmsx']/8192],
+							"rmsy": [resultado[0]['rmsy']/8192, resultado[1]['rmsy']/8192, resultado[2]['rmsy']/8192, resultado[3]['rmsy']/8192, resultado[4]['rmsy']/8192],
+							"rmsz": [resultado[0]['rmsz']/8192, resultado[1]['rmsz']/8192, resultado[2]['rmsz']/8192, resultado[3]['rmsz']/8192, resultado[4]['rmsz']/8192]
+							}) 
+    
+	dataset = dataset.append(dataset_last_5, ignore_index=True)	
+
+	print(dataset, file=sys.stderr)
+	
+	algorithm = KMeans(n_clusters = 2, init='k-means++', n_init = 10 ,max_iter=300, tol=0.0001, random_state= 1, algorithm='elkan')
+    
+    ### Eixo X ###
+	X = dataset[['rmsx' , 'accx']].iloc[: , :].values    
+	algorithm.fit(X)    
+	x_pred_status = algorithm.labels_
+        
+    ### Eixo Y ###
+    
+	Y = dataset[['rmsy' , 'accy']].iloc[: , :].values   
+	algorithm.fit(Y)
+	y_pred_status = algorithm.labels_
+        
+    ### Eixo Z ###
+	Z = dataset[['rmsz' , 'accz']].iloc[: , :].values
+	algorithm.fit(Z)
+	z_pred_status = algorithm.labels_  
+    
+	anormal = {}
+	anormal['X'] = sum(x_pred_status[-5:])
+	anormal['Y'] = sum(y_pred_status[-5:])
+	anormal['Z'] = sum(z_pred_status[-5:])   
+    
+	return anormal
+	
+def predictionAlert(col):
+	global predictionCount 
+	predictionCount = predictionCount + 1
+	
+	place = ""
+	equipment = ""
+
+	(cr, cnx) = openConnection()
+	query = "SELECT P.description, E.description FROM Place P INNER JOIN Endpoint D ON D.Place_idPlace = P.idPlace INNER JOIN Equipment E ON E.idEquipment = P.Equipment_idEquipment WHERE D.mac = (%s)"
+	dados = (col.endpoint['mac'],)
+
+	cr.execute(query, dados)
+
+	for description in cr.fetchall():
+		place = description[0]
+		equipment = description[1]
+
+	closeConnection(cr, cnx)
+	
+	if predictionCount == 5:
+		predictionCount = 0
+		anormal_prediction = prediction(col)
+		if (anormal_prediction['X'] > 2) or (anormal_prediction['Y'] > 2) or (anormal_prediction['Z'] > 2):
+			message = 'Detecção de comportamento anômalo no ' + equipment + ' (' +  + ')'
+			result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
+	
+	temp = col.collect['temp']
+	if temp > 1860:
+		temp = (temp/340)+36.53
+		temp = round(temp, 2)
+		message = 'A temperatura do ' + equipment + ' (' + place + ')' + ' é de ' + str(temp) + ' °C'
+		result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
+	
 def openConnection():
     cnx = mysql.connector.connect(
-			user='tcc', 
-			password='tcc20192', 
-			host='localhost', 
-			database='dbtcc', 
-			auth_plugin='mysql_native_password'
-			)
+		user='tcc', 
+		password='tcc20192', 
+		host='localhost', 
+		database='dbtcc', 
+		auth_plugin='mysql_native_password'
+		)
     cr = cnx.cursor(buffered=True)
     return (cr, cnx)
 
@@ -29,16 +131,6 @@ def openConnection():
 def closeConnection(cr, cnx):
     cr.close()
     cnx.close()
-	
-def predictionAlert(col):
-	temp = col.collect['temp']
-	
-	if temp > 1860:
-		temp = (temp/340)+36.53
-		temp = round(temp, 2)
-		message = 'A temperatura do equipamento é de ' + str(temp) + ' °C'
-		result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
-	
 
 class collectClass:
 	def __init__(self, _collect, _gateway, _endpoint):

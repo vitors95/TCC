@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from sklearn.cluster import KMeans
 from sklearn.metrics import classification_report
-from sklearn.metrics import precision_recall_fscore_support as score
 
 dataset = pd.read_csv('dataset_normalized.csv')
 
