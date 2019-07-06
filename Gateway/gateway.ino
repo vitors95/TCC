@@ -1,29 +1,29 @@
 #include "BLEDevice.h"
-//#define BACKOFF_TIME 20000
 #include <WiFi.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
 uint16_t BACKOFF_TIME = 1000;
 
-hw_timer_t *timer = NULL; //faz o controle do temporizador (interrupção por tempo)
+hw_timer_t *timer = NULL; // faz o controle do temporizador (interrupção por tempo)
 //callback do watchdog
 
 // Serviço remoto que se deseja conectar
 static BLEUUID serviceUUID("0000ffe0-0000-1000-8000-00805f9b34fb");
-// Característica associada ao serviço que estamos interessados
+// Característica associada ao serviço desejado
 static BLEUUID charUUID("0000ffe1-0000-1000-8000-00805f9b34fb");
 
+// MAC do endpoint
 String BEACON = "00:15:85:14:9c:09";
 
 static BLEAddress *pServerAddress;
 static boolean doConnect = false;
 static BLERemoteCharacteristic* pRemoteCharacteristic;
 
-struct Disp_BLE{
+struct Disp_BLE {
     BLEClient*  pClient  = BLEDevice::createClient();
     BLEAdvertisedDevice advertisedDevice;
-    boolean leu = false;
+    boolean received = false;
     signed int accx;
     signed int accy;
     signed int accz;
@@ -34,27 +34,29 @@ struct Disp_BLE{
     signed char auxByte;
 } aux;
 
-static uint8_t xablau = 0;
+static uint8_t restartScan = 0;
 static long int last_time = 0, current_time= 0;
 static String last_mac = "", current_mac = "";
 
+// Ativação do watchdog - reinício da ESP32
+
 void IRAM_ATTR resetModule(){
-    ets_printf("WATCHDOG ATIVADO, REINICIANDO...\n"); //imprime no log
-    esp_restart(); //reinicia o chip
+    ets_printf("WATCHDOG ATIVADO, REINICIANDO...\n"); 
+    esp_restart(); 
 }
 
 bool connect_wifi(){
-    const char* ssid = "Xiaomi";
-    const char* password = "maria2000";
+    const char* ssid = ""; // SSID da rede Wi-Fi
+    const char* password = ""; // Senha da rede Wi-Fi
 
     WiFi.begin(ssid, password); 
   
-    while (WiFi.status() != WL_CONNECTED) { //Check for the connection
+    while (WiFi.status() != WL_CONNECTED) { 
       delay(1000);
-      Serial.println("Conectando com rede Wi-Fi...");
+      Serial.println("Conectando com a rede Wi-Fi...");
     }
     if(WiFi.status() == WL_CONNECTED){
-      Serial.println("Conectado, enviando dados dos sensores");
+      Serial.println("Conectado, enviando dados do sensor");
       Serial.println(WiFi.localIP());
       return true;
     }else{
@@ -64,7 +66,7 @@ bool connect_wifi(){
 }
 
 void send_data(int accx, int accy, int accz, int rmsx, int rmsy, int rmsz, int temp){  
-    DynamicJsonBuffer JSONbuffer;   //Declaring static JSON buffer
+    DynamicJsonBuffer JSONbuffer;   
     JsonObject& JSONencoder = JSONbuffer.createObject(); 
 
     Serial.println("MONTANDO JSON!");
@@ -90,32 +92,31 @@ void send_data(int accx, int accy, int accz, int rmsx, int rmsy, int rmsz, int t
     JSONencoder.prettyPrintTo(Serial);
     JSONencoder.prettyPrintTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
 
-    HTTPClient http;    //Declare object of class HTTPClient
+    HTTPClient http;
     
-    http.begin("http://ec2-34-215-199-111.us-west-2.compute.amazonaws.com:5000/collect");              //Specify destination for HTTP request
-    http.addHeader("Content-Type", "application/json");         //Specify content-type header
+    http.begin("http://ec2-34-215-199-111.us-west-2.compute.amazonaws.com:5000/collect"); 
+    http.addHeader("Content-Type", "application/json");
 
-    int httpCode = http.POST(JSONmessageBuffer);   //Send the request
-    //Serial.println(JSONmessageBuffer);
-//    String payload = http.getString();             //Get the response payload
+    int httpCode = http.POST(JSONmessageBuffer);  
+    http.end();  
     
-//    Serial.println(httpCode);   //Print HTTP return code
-//    Serial.println(payload);    //Print request response payload
-    http.end();  //Free resources
     Serial.println("HTTP CODE");
     Serial.println(httpCode);
+    
     if (httpCode == 200){
       Serial.println("DADOS ENVIADOS PARA O BANCO!");
     }
     else {
       Serial.println("Erro no envio, ignorando dados.");  
     }
-    timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
+    timerWrite(timer, 0); // reseta o temporizador (alimenta o watchdog) 
 }
 
 static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
     Serial.print("Notificação recebida de: ");
     Serial.println(pBLERemoteCharacteristic->getUUID().toString().c_str());
+
+    // Tratamento dos dados enviados pelo endpoint
 
     aux.auxByte = pData[1];
     aux.accx = (aux.auxByte << 8) | (pData[0]);
@@ -138,39 +139,41 @@ static void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, ui
     aux.auxByte = pData[13];
     aux.temp = (aux.auxByte << 8) | (pData[12]);
 
-    aux.leu = true;
-    timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
+    aux.received = true;
+    timerWrite(timer, 0); // reseta o temporizador (alimenta o watchdog) 
     aux.pClient->disconnect();
     delay(1500);
 }
 
-// VERIFICA ULTIMA CONEXAO DO BEACON
 bool verifica_conexao(){
     current_mac = aux.advertisedDevice.getAddress().toString().c_str();
+
+    // Implementação da abordagem do BACKOFF, para garantir que todos os endpoints consigam se conectar à ESP32.
+    // Contudo, como apenas um endpoint foi utilizado no trabalho, o tempo de BACKOFF foi definido como apenas 1 segundo.
+    // Sendo assim, como o endpoint envia apenas a cada 1 minuto, o BACKOFF não foi utilizado
     
-    if((current_mac.equals(last_mac))){
+    if ((current_mac.equals(last_mac))){
       long int tempo = current_time - last_time;
       if (tempo < BACKOFF_TIME){ // se houve um novo anuncio do mesmo beacon em menos de BACKOFF_TIME segundos
-        Serial.print("MUITO CEDO, IGNORANDO: ");
         Serial.println(aux.advertisedDevice.getName().c_str());
         Serial.print("Tempo em espera: ");
         Serial.print(tempo/1000);
-        Serial.println(" segundos");
-        xablau = 1;
+        Serial.println("segundos");
+        restartScan = 1;
         return false;
-      }else{  // se ja se passaram os BACKOFF_TIME segundos
+      } else{  // se já se passaram os BACKOFF_TIME segundos
         last_time = current_time;
         Serial.print("Dispositivo conectado: ");
         Serial.println(aux.advertisedDevice.getName().c_str());
-        timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
+        timerWrite(timer, 0); // reseta o temporizador (alimenta o watchdog) 
         return true;
       }
-    }else{ // se o dispositivo que se conectou não é o mesmo que o anterior
+    } else{ // se o dispositivo que se conectou não é o mesmo que o anterior
         Serial.print("Dispositivo conectado: ");
         Serial.println(aux.advertisedDevice.getName().c_str());
         last_mac = current_mac;
         last_time = current_time;
-        timerWrite(timer, 0); //reseta o temporizador (alimenta o watchdog) 
+        timerWrite(timer, 0); // reseta o temporizador (alimenta o watchdog) 
         return true;
      }
 }
@@ -181,7 +184,7 @@ bool connectToServer(BLEAddress pAddress) {
         aux.pClient = pClient;
         pClient->connect(pAddress);
     
-        // Obtain a reference to the service we are after in the remote BLE server.
+        // Obtém a referência do serviço do endpoint.
         BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
         if (pRemoteService == nullptr) {
           Serial.print("Falha ao encontrar UUID de servico: ");
@@ -189,7 +192,7 @@ bool connectToServer(BLEAddress pAddress) {
           return false;
         }
         
-        // Obtain a reference to the characteristic in the service of the remote BLE server.
+        // Obtém a referência da característica do serviço do endpoint.
         pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
         if (pRemoteCharacteristic == nullptr) {
           Serial.print("Falha ao encotrar UUID da caracteristica: ");
@@ -201,18 +204,16 @@ bool connectToServer(BLEAddress pAddress) {
         return true;
     }else return false;
 }
-/**
- * Scan for BLE servers and find the first one that advertises the service we are looking for.
- */
+
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
- /**
-   * Called for each advertising BLE server.
-   */
+
+  // Callback executado sempre que um dispositivo é encontrado na rede BLE
+
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     Serial.print("Dispositivo BLE Encontrado: ");
     Serial.println(advertisedDevice.toString().c_str());
 
-    // We have found a device, let us now see if it contains the service we are looking for.
+    // Verifica se o serviço do endpoint é, de fato, o serviço desejado
     if (advertisedDevice.haveServiceUUID() && advertisedDevice.getServiceUUID().equals(serviceUUID)) {
 
       advertisedDevice.getScan()->stop();
@@ -222,17 +223,16 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       aux.advertisedDevice = advertisedDevice;
       doConnect = true;
 
-    } // Found our server
-  } // onResult
-}; // MyAdvertisedDeviceCallbacks
-
+    } 
+  } 
+}; 
 
 void setup() {
   Serial.begin(230400);
   //---------------------------------------------------------------------------
-  //CONFIGURACAO DO WATCHDOG
+  // Configuração do WATCHDOG
   //---------------------------------------------------------------------------
-  timer = timerBegin(0, 80, true); //timerID 0, div 80
+  timer = timerBegin(0, 80, true); // timerID 0, div 80
   
   //timer, callback, interrupção de borda
   timerAttachInterrupt(timer, &resetModule, true);
@@ -240,15 +240,18 @@ void setup() {
   //timer, tempo (us), repetição
   timerAlarmWrite(timer, 30000000, true);
   timerAlarmEnable(timer); //habilita a interrupção 
+  
   Serial.println("Watchdog configurado!");
   delay(100);
   Serial.println("Iniciando Scanner BLE");
   //---------------------------------------------------------------------------
   // CONFIGURACAO DO SCANNER BLE
   //---------------------------------------------------------------------------
-  // Retrieve a Scanner and set the callback we want to use to be informed when we
-  // have detected a new device.  Specify that we want active scanning and start the
-  // scan to run for 30 seconds.
+
+  // Início do Scanner BLE.
+  // Definição do callback a ser executado quando um dispositivo é encontrado.
+  // Duração do scan configurado para 30 segundos.
+
   BLEDevice::init("");
   BLEScan* pBLEScan = BLEDevice::getScan();
   pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
@@ -258,19 +261,19 @@ void setup() {
 } 
 
 
-// This is the Arduino main loop function.
 void loop() {
   
   if (doConnect == true) {
     connectToServer(*pServerAddress);
     doConnect = false;
   }
- 
-  // inicia um novo scan
-  // aqui deve verificar se uma nova informacao foi recebida (USAR AUX.LEU)
-  // e a conexao BLE é fechada, aqui que tera que ser chamada uma
-  // funcao para mandar infos via Wi-Fi
-    if (aux.leu){
+
+
+  // Verifica se as informações enviadas pelo endpoint foram recebidas e lidas.
+  // Após isso, tenta se conectar à rede Wi-Fi e checa se o MAC do endpoint é o desejado.
+  // Por fim, envia as informações para o backend através da API Restful.
+  
+    if (aux.received){
       if (connect_wifi()){
         String mac_atual = aux.advertisedDevice.getAddress().toString().c_str();
         if(mac_atual.equals(BEACON)){
@@ -286,7 +289,7 @@ void loop() {
         }
       }
       WiFi.disconnect();
-      aux.leu = false;
+      aux.received = false;
       delay(1000);
       Serial.println("Reiniciando scan BLE...");
       delay(500);
@@ -295,7 +298,7 @@ void loop() {
       pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
       pBLEScan->setActiveScan(true);
       pBLEScan->start(30);
-    }else if(xablau){
+    } else if(restartScan){
         Serial.println("Reiniciando scan BLE...");
         BLEScan* pBLEScan = BLEDevice::getScan();
         pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());

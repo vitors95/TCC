@@ -15,6 +15,9 @@ int count = 0;
 byte *p;
 
 void sendData(signed long data) {
+  
+  // Cada valor enviado é representado por 2 bytes
+  
   p = (byte*)&data;
   mySerial.write(p, 2);
 }
@@ -26,7 +29,9 @@ void setMPU() {
   Wire.write(0);
   Wire.endTransmission(true);
 
-  mpu.setFullScaleAccelRange(1); // +-4g
+  mpu.setFullScaleAccelRange(1); // range de valores: +-4g || fator de sensibilidade: 8192
+
+  // Offsets obtidos a partir do sketch MPU-6050_Calibration, desenvolvido por Luis Ródenas <luisrodenaslorda@gmail.com>
   
   mpu.setXAccelOffset(1352);
   mpu.setYAccelOffset(353);
@@ -46,9 +51,9 @@ void setup() {
 
 void loop() {
   Wire.beginTransmission(MPU_addr);
-  Wire.write(0x3B);  // starting with register 0x3B (ACCEL_XOUT_H)
+  Wire.write(0x3B);  //
   Wire.endTransmission(false);
-  Wire.requestFrom(MPU_addr, 8, true);  // request a total of 8 registers
+  Wire.requestFrom(MPU_addr, 8, true);  
   
   accX = Wire.read()<<8|Wire.read();  // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)  
   accY = Wire.read()<<8|Wire.read();  // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
@@ -56,6 +61,7 @@ void loop() {
   temp = Wire.read()<<8|Wire.read();  // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
 
   if (accX == 0 && accY == 0 && accZ == 0) {
+    // Quando ocorre erro na leitura (todos os valores 0), o MPU-6050 é reconfigurado
     setMPU();
   } else {
     if (count == 0) {
@@ -66,6 +72,7 @@ void loop() {
       minAccY = accY;
       minAccZ = accZ;
     } else {
+      // Armazenamento dos valores máximo e mínimo para obtenção do pico-a-pico
       maxAccX = max(maxAccX, accX);
       maxAccY = max(maxAccY, accY);
       maxAccZ = max(maxAccZ, accZ);
@@ -73,6 +80,8 @@ void loop() {
       minAccY = min(minAccY, accY);
       minAccZ = min(minAccZ, accZ);  
     }
+    // Armazenamento dos quadrado das medidas para cálculo dos valores RMS
+    // Para que não houvesse overflow, foram utilizados 2 variáveis para cada eixo
     if (count < 10) {
       auxRmsX += (accX * accX);
       auxRmsY += (accY * accY);
@@ -104,11 +113,13 @@ void loop() {
   Serial.print(" | Tmp = "); Serial.print(auxTemp);
   Serial.println();
 
+  // A cada 1 minuto são enviadas as medidas à rede BLE através do módulo AT-09
+
   if (count >= 20) {
     accX = maxAccX - minAccX; // pico-a-pico
     accY = maxAccY - minAccY;
     accZ = maxAccZ - minAccZ;
-    rmsX = (sqrt(auxRmsX/10) + sqrt(aux2RmsX/10))/2;
+    rmsX = (sqrt(auxRmsX/10) + sqrt(aux2RmsX/10))/2; // RMS
     rmsY = (sqrt(auxRmsY/10) + sqrt(aux2RmsY/10))/2;
     rmsZ = (sqrt(auxRmsZ/10) + sqrt(aux2RmsZ/10))/2;
     temp = auxTemp/20;

@@ -45,6 +45,9 @@ def prediction(col):
 
 	closeConnection(cr, cnx)  
 		
+	## Anexa as 5 últimas coletas ao dataset previamente construído com 300 amostras do funcionamento normal
+	## e 300 amostras do funcionamento anormal
+	
 	dataset_last_5 = pd.DataFrame({
 							"accx": [resultado[0]['accx']/8192, resultado[1]['accx']/8192, resultado[2]['accx']/8192, resultado[3]['accx']/8192, resultado[4]['accx']/8192], 
 							"accy": [resultado[0]['accy']/8192, resultado[1]['accy']/8192, resultado[2]['accy']/8192, resultado[3]['accy']/8192, resultado[4]['accy']/8192],
@@ -58,7 +61,9 @@ def prediction(col):
 
 	print(dataset, file=sys.stderr)
 	
-	algorithm = KMeans(n_clusters = 2, init='k-means++', n_init = 10 ,max_iter=300, tol=0.0001, random_state= 1, algorithm='elkan')
+
+	# Instanciação do algoritmo K-means	
+	algorithm = KMeans(n_clusters = 2, init='k-means++', n_init = 10, max_iter=300, tol=0.0001, random_state= 1, algorithm='elkan')
     
     ### Eixo X ###
 	X = dataset[['rmsx' , 'accx']].iloc[: , :].values    
@@ -102,12 +107,20 @@ def predictionAlert(col):
 
 	closeConnection(cr, cnx)
 	
+	## Caso seja a quinta coleta, executa o K-means considerando as últimas 5 coletas e o dataset 
+	
 	if predictionCount == 5:
 		predictionCount = 0
 		anormal_prediction = prediction(col)
+		
+		# Verifica se 3 ou mais amostras, independente do eixo da aceletação, foram classificadas como anormais.
+		# Caso positivo, o backend envia uma notificação de push para alertar os usuários
+		
 		if (anormal_prediction['X'] > 2) or (anormal_prediction['Y'] > 2) or (anormal_prediction['Z'] > 2):
-			message = 'Detecção de comportamento anômalo no ' + equipment + ' (' +  + ')'
+			message = 'Detecção de comportamento anômalo no ' + equipment + ' (' + place + ')'
 			result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
+	
+	# Verifica se a temperatura da coleta é maior do que o valor configurado para o limiar, que é o equivalente a 42°C
 	
 	temp = col.collect['temp']
 	if temp > 1860:
@@ -115,14 +128,16 @@ def predictionAlert(col):
 		temp = round(temp, 2)
 		message = 'A temperatura do ' + equipment + ' (' + place + ')' + ' é de ' + str(temp) + ' °C'
 		result = push_service.notify_topic_subscribers(topic_name="all", message_title="ATENÇÃO", message_body=message, content_available=True)
+		
+###################################    INTERAÇÃO COM O BANCO E DADOS     ###################################
 	
 def openConnection():
     cnx = mysql.connector.connect(
-		user='tcc', 
-		password='tcc20192', 
-		host='localhost', 
-		database='dbtcc', 
-		auth_plugin='mysql_native_password'
+			user='tcc', 
+			password='tcc20192', 
+			host='localhost', 
+			database='dbtcc', 
+			auth_plugin='mysql_native_password'
 		)
     cr = cnx.cursor(buffered=True)
     return (cr, cnx)
@@ -182,7 +197,9 @@ def receiveCollect():
 				request.json['gateway'], 
 				request.json['endpoint']
 				)
-			
+		
+		# Envia cada coleta recebida para a análise dos valores
+		
 		predictionAlert(col)		
 	
 	##########    Verifica se existe o endpoint e obtém o placeID     ##########
