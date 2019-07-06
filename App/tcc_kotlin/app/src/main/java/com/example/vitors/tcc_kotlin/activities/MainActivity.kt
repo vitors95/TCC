@@ -21,9 +21,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
 
-    var places: Array<Place> = arrayOf()
-    var collects: Array<Collect> = arrayOf()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -66,31 +63,6 @@ class MainActivity : AppCompatActivity() {
     private fun setPlaces(places: Array<Place>, collects: Array<Collect>) {
         recyclerView_main.adapter = PlaceAdapter(places, collects)
     }
-
-//    fun fetchPlaces() {
-//        val url = "http://ec2-34-215-199-111.us-west-2.compute.amazonaws.com:5000/places"
-//        val request = Request.Builder()
-//            .url(url)
-//            .build()
-//
-//        val client = OkHttpClient()
-//        client.newCall(request).enqueue(object: Callback {
-//
-//            override fun onResponse(call: Call, response: Response) {
-//                val body = response.body()?.string()
-//                val gson = GsonBuilder().create()
-//                val places = gson.fromJson(body, Array<Place>::class.java)
-//
-//                runOnUiThread {
-//                    recyclerView_main.adapter = PlaceAdapter(places)
-//                }
-//            }
-//
-//            override fun onFailure(call: Call, e: IOException) {
-//                println("Falha na requisição")
-//            }
-//        })
-//    }
 
 }
 
